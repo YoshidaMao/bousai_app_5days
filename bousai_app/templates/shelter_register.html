@@ -15,6 +15,7 @@
     background: #fff;
     font: inherit;
   }
+  .shelter-form input[type="checkbox"] { width: auto; min-height: auto; margin-right: 8px; }
   .shelter-form button {
     min-height: 44px;
     padding: 9px 18px;
@@ -29,8 +30,9 @@
   .form-message { padding: 12px 14px; border-radius: 8px; background: #eff6ff; }
 </style>
 
-<h2>避難所登録</h2>
+<h1>避難所登録</h1>
 <p>新しい避難所情報を登録します。</p>
+<p>避難所データは青森市の公的施設一覧ではありません。青森市内での施設の実在と所在地を公的情報などで照合してから、確認済みとして登録してください。</p>
 
 {% if success %}
   <p class="form-message" role="status">{{ message }}</p>
@@ -42,11 +44,15 @@
 <form method="POST" class="shelter-form">
   <div>
     <label for="name">避難所名（必須）</label>
-    <input type="text" id="name" name="name" required>
+    <input type="text" id="name" name="name" maxlength="200" required>
   </div>
   <div>
     <label for="address">住所</label>
-    <input type="text" id="address" name="address" autocomplete="street-address">
+    <input type="text" id="address" name="address" maxlength="300" autocomplete="street-address">
+  </div>
+  <div>
+    <label for="district">地区</label>
+    <input type="text" id="district" name="district" maxlength="100">
   </div>
   <div>
     <label for="status">開設状況</label>
@@ -55,6 +61,17 @@
       <option value="開設中">開設中</option>
       <option value="閉鎖">閉鎖</option>
     </select>
+  </div>
+  <div>
+    <label for="latitude">緯度（地図表示には緯度・経度の両方が必要）</label>
+    <input type="number" id="latitude" name="latitude" min="-90" max="90" step="any" inputmode="decimal">
+  </div>
+  <div>
+    <label for="longitude">経度</label>
+    <input type="number" id="longitude" name="longitude" min="-180" max="180" step="any" inputmode="decimal">
+  </div>
+  <div>
+    <label><input type="checkbox" name="verified" value="yes"> 青森市内での施設の実在と所在地を公的情報などで確認済み（緯度・経度も必須）</label>
   </div>
   <div>
     <label for="capacity">収容人数（人）</label>

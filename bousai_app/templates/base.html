@@ -93,6 +93,12 @@
     .site-menu a:hover,
     .site-menu a:focus-visible { color: #2456a6; background: #f0f5fd; }
 
+    .site-menu a[aria-current="page"] {
+      color: #1d4ed8;
+      background: #eaf1ff;
+      box-shadow: inset 3px 0 #2857a4;
+    }
+
     .menu-status {
       padding: 10px 12px 4px;
       border-top: 1px solid #edf0f5;
@@ -126,16 +132,16 @@
       </button>
     </div>
     <nav class="site-menu" id="site-menu" aria-label="メインメニュー" hidden>
-      <a href="/">ホーム</a>
-      <a href="/shelter_search">避難所検索</a>
-      <a href="/shelter_register">避難所登録</a>
-      <a href="/board">指示・発信ボード</a>
+      <a href="/" {% if request.path == '/' %}aria-current="page"{% endif %}>ホーム</a>
+      <a href="/shelter_search" {% if request.path in ['/shelter_search', '/search_results', '/all_shelters'] %}aria-current="page"{% endif %}>避難所検索</a>
+      <a href="/shelter_register" {% if request.path == '/shelter_register' %}aria-current="page"{% endif %}>避難所登録</a>
+      <a href="/board" {% if request.path.startswith('/board') %}aria-current="page"{% endif %}>指示・発信ボード</a>
       {% if session.logged_in %}
         <span class="menu-status">ログイン中{% if session.username %}（{{ session.username }}）{% endif %}</span>
         <a href="/logout">ログアウト</a>
       {% else %}
         <span class="menu-status">未ログイン</span>
-        <a href="/login">ログイン</a>
+        <a href="/login" {% if request.path == '/login' %}aria-current="page"{% endif %}>ログイン</a>
       {% endif %}
     </nav>
   </header>

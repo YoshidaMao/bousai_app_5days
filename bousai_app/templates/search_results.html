@@ -20,6 +20,8 @@
   .facility-label--yes { color: #166534; background: #dcfce7; }
   .facility-label--no { color: #991b1b; background: #fee2e2; }
   .facility-label--unknown { color: #475569; background: #e2e8f0; }
+  .verification-label { display: inline-block; margin-top: 4px; padding: 3px 7px; border-radius: 6px; color: #854d0e; background: #fef3c7; font-size: 12px; font-weight: 700; }
+  .shelter-data-note { padding: 12px 14px; border-left: 4px solid #ca8a04; background: #fefce8; }
   .empty-results {
     margin: 20px 0;
     padding: 24px;
@@ -34,7 +36,8 @@
   }
 </style>
 
-<h2>検索結果</h2>
+<h1>検索結果</h1>
+<p class="shelter-data-note">避難所一覧は運営者が登録した情報です。公的な指定施設として未確認の情報は「未確認」と表示しています。避難前に自治体の最新情報をご確認ください。</p>
 
 {% if results %}
   <div class="results-table-wrap">
@@ -60,7 +63,10 @@
           {% set pets_allowed = shelter.get('pets_allowed', 'unknown') %}
           {% set barrier_free = shelter.get('barrier_free', 'unknown') %}
           <tr>
-            <td>{{ shelter.get('name', '名称未登録') }}</td>
+            <td>
+              {{ shelter.get('name', '名称未登録') }}
+              {% if shelter.get('verified') is not true %}<br><span class="verification-label">施設・所在地 未確認</span>{% endif %}
+            </td>
             <td>{{ shelter.get('address') or '未登録' }}</td>
             <td>
               <span class="shelter-status {% if status == '開設中' %}shelter-status--open{% elif status == '閉鎖' %}shelter-status--closed{% else %}shelter-status--unset{% endif %}">

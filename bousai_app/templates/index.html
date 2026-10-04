@@ -1,97 +1,66 @@
 {% extends "base.html" %}
 
+{% block title %}ホーム - 防災アプリ{% endblock %}
+
 {% block head %}
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <style>
-    .home-content { display: grid; gap: 34px; }
-
+    .home-content { display: grid; gap: 24px; }
     .home-card {
-      padding: 27px;
-      border: 1px solid rgb(226 232 240 / 52%);
-      border-radius: 19px;
-      background: rgb(255 255 255 / 88%);
-      box-shadow: 0 8px 28px rgb(44 72 110 / 6%);
+      padding: 24px;
+      border: 1px solid #e2e8f0;
+      border-radius: 16px;
+      background: #fff;
+      box-shadow: 0 6px 20px rgb(44 72 110 / 6%);
     }
-
-    .card-heading {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin: 0 0 20px;
-      color: #2859a8;
-      font-size: 22px;
-      font-weight: 750;
-      line-height: 1.4;
+    .card-heading { display: flex; align-items: center; gap: 10px; margin: 0 0 16px; color: #2859a8; font-size: 21px; line-height: 1.4; }
+    .card-heading svg { width: 25px; height: 25px; flex: 0 0 auto; }
+    .section-intro, .source-note { color: #475569; }
+    #shelterMap { width: 100%; height: 360px; border-radius: 12px; background: #e5edf0; }
+    .map-legend { display: flex; flex-wrap: wrap; gap: 16px; margin: 12px 0 0; padding: 0; list-style: none; }
+    .map-legend li { display: inline-flex; align-items: center; gap: 7px; }
+    .map-pin { display: inline-block; width: 18px; height: 18px; border: 2px solid #fff; border-radius: 50% 50% 50% 0; background: #15803d; box-shadow: 0 1px 4px #334155; transform: rotate(-45deg); }
+    .map-pin--closed { background: #64748b; }
+    .map-pin--you { background: #2563eb; }
+    .map-message { margin: 10px 0 0; color: #475569; }
+    .weather-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+    .weather-toolbar .card-heading { margin: 0; }
+    .refresh-button, .filter-control {
+      min-height: 42px; padding: 8px 13px; border: 1px solid #b8c8dc; border-radius: 8px; color: #1e3a5f; background: #fff; font: inherit;
     }
-
-    .card-heading svg { flex: 0 0 auto; width: 25px; height: 25px; }
-
-    #shelterMap {
-      width: 100%;
-      height: 365px;
-      overflow: hidden;
-      border-radius: 12px;
-      background: #d4e8ed;
-    }
-
-    .weather-heading {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 14px;
-      margin-bottom: 20px;
-    }
-
-    .weather-heading .card-heading { margin: 0; }
-
-    .refresh-label {
-      display: inline-flex;
-      flex: 0 0 auto;
-      align-items: center;
-      gap: 7px;
-      color: #229b50;
-      font-size: 16px;
-      font-weight: 650;
-    }
-
-    .refresh-label svg { width: 19px; height: 19px; }
-
-    .weather-panel {
-      min-height: 176px;
-      padding: 20px;
-      border-radius: 12px;
-      background: #f6f7f9;
-    }
-
-    .weather-location,
-    .weather-status,
-    .weather-meta,
-    .warning-list { display: flex; align-items: center; }
-
-    .weather-location { gap: 9px; margin: 0 0 15px; color: #475569; font-size: 18px; font-weight: 700; }
-    .weather-location svg { width: 19px; height: 19px; }
-
-    .weather-status { gap: 9px; margin: 0 0 16px; color: #25994d; font-weight: 700; }
-    .weather-status svg { flex: 0 0 auto; width: 19px; height: 19px; }
-    .weather-status.has-warnings { color: #b45309; }
-    .weather-status.is-error { color: #b42318; }
-
-    .warning-list { flex-wrap: wrap; gap: 8px; margin: -5px 0 15px; padding: 0; list-style: none; }
-    .warning-list li { padding: 5px 10px; border-radius: 999px; color: #9a3412; background: #ffedd5; font-size: 14px; font-weight: 650; }
-
-    .weather-meta { display: grid; gap: 10px; color: #718096; font-size: 14px; }
-    .weather-meta p { display: flex; align-items: center; gap: 7px; margin: 0; }
-    .weather-meta svg { width: 16px; height: 16px; }
-
+    .refresh-button { cursor: pointer; font-weight: 650; }
+    .refresh-button:hover, .refresh-button:focus-visible { background: #eff6ff; }
+    .disaster-list { display: grid; gap: 12px; margin-top: 17px; }
+    .info-state, .disaster-item, .notice-item { padding: 15px; border: 1px solid #dbe3ee; border-radius: 10px; background: #f8fafc; }
+    .info-state { margin-top: 15px; }
+    .disaster-item { border-left: 5px solid #94a3b8; }
+    .disaster-item--緊急 { border-left-color: #b91c1c; background: #fff1f2; }
+    .disaster-item--警報 { border-left-color: #c2410c; background: #fff7ed; }
+    .disaster-item--注意報 { border-left-color: #ca8a04; background: #fefce8; }
+    .disaster-meta { display: flex; flex-wrap: wrap; gap: 7px 14px; margin-top: 7px; color: #475569; font-size: 14px; }
+    .type-label, .urgency-label, .instruction-state { display: inline-block; padding: 3px 8px; border-radius: 999px; font-size: 13px; font-weight: 700; }
+    .type-label--緊急, .urgency-label--high { color: #991b1b; background: #fee2e2; }
+    .type-label--警報 { color: #9a3412; background: #ffedd5; }
+    .type-label--注意報 { color: #854d0e; background: #fef3c7; }
+    .type-label--通常 { color: #334155; background: #e2e8f0; }
+    .source-note { margin: 12px 0 0; font-size: 14px; overflow-wrap: anywhere; }
+    .source-note a { color: #1d4ed8; }
+    .inline-icon { display: inline-flex; width: 18px; height: 18px; vertical-align: -3px; }
+    .inline-icon svg { width: 100%; height: 100%; }
+    .state-check { margin-right: 6px; color: #166534; font-weight: 800; }
+    .resident-notices { display: grid; gap: 10px; padding: 0; list-style: none; }
+    .notice-item h3 { margin: 0 0 8px; font-size: 17px; }
+    .notice-item--high { border-color: #fecaca; background: #fff1f2; }
+    .notice-item--inactive { color: #64748b; background: #f1f5f9; }
+    .instruction-state--active { color: #166534; background: #dcfce7; }
+    .instruction-state--inactive { color: #475569; background: #e2e8f0; }
+    .notice-meta { display: flex; flex-wrap: wrap; gap: 6px 14px; color: #475569; font-size: 14px; }
     @media (max-width: 600px) {
-      .home-content { gap: 18px; }
-      .home-card { padding: 18px; border-radius: 15px; }
-      .card-heading { margin-bottom: 15px; font-size: 19px; }
+      .home-content { gap: 16px; }
+      .home-card { padding: 17px; }
+      .card-heading { font-size: 19px; }
       #shelterMap { height: min(68vw, 340px); min-height: 245px; }
-      .weather-heading { align-items: flex-start; flex-direction: column; gap: 8px; }
-      .refresh-label { font-size: 14px; }
-      .weather-panel { padding: 16px; }
-      .weather-meta { flex-direction: column; align-items: flex-start; }
+      .weather-toolbar { align-items: flex-start; }
     }
   </style>
 {% endblock %}
@@ -100,126 +69,285 @@
 <div class="home-content">
   <section class="home-card" aria-labelledby="map-heading">
     <h1 class="card-heading" id="map-heading">
-      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        <path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z" fill="currentColor"/>
-        <circle cx="12" cy="10" r="2.6" fill="#fff"/>
-      </svg>
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z" fill="currentColor"/><circle cx="12" cy="10" r="2.6" fill="#fff"/></svg>
       避難所マップ
     </h1>
-    <div id="shelterMap" role="region" aria-label="青森市周辺の地図"></div>
+    <p class="section-intro">登録済みで地図座標が入力された避難所を表示します。未確認の施設や座標は表示しません。</p>
+    <div id="shelterMap" role="region" aria-label="{{ config.get('AREA_NAME', '対象地域') }}の避難所地図"></div>
+    <ul class="map-legend" aria-label="地図マーカーの凡例">
+      <li><span class="map-pin" aria-hidden="true"></span>開設中</li>
+      <li><span class="map-pin map-pin--closed" aria-hidden="true"></span>休止・未設定</li>
+      <li><span class="map-pin map-pin--you" aria-hidden="true"></span>現在地</li>
+    </ul>
+    <p class="map-message" id="mapMessage" role="status">避難所データを読み込んでいます。</p>
+    <p class="source-note">地図タイル: © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a></p>
   </section>
 
-  <section class="home-card" aria-labelledby="weather-heading">
-    <div class="weather-heading">
-      <h2 class="card-heading" id="weather-heading">
-        <svg viewBox="0 0 28 28" fill="none" aria-hidden="true">
-          <g stroke="currentColor" stroke-width="1.7" stroke-linecap="round">
-            <path d="M10 2.5v2M3.64 5.14l1.42 1.42M1 11.5h2"/>
-            <path d="m5.06 16.44-1.42 1.42"/>
-          </g>
-          <circle cx="10" cy="11.5" r="4.2" fill="currentColor"/>
-          <path d="M10.2 22h11.15a4.15 4.15 0 0 0 .5-8.27 6.35 6.35 0 0 0-12.17 1.73A3.3 3.3 0 0 0 10.2 22Z" fill="currentColor" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-        <span id="weatherTitle">青森市 気象警報・注意報</span>
+  <section class="home-card" aria-labelledby="disaster-heading">
+    <div class="weather-toolbar">
+      <h2 class="card-heading" id="disaster-heading">
+        <svg viewBox="0 0 28 28" fill="none" aria-hidden="true"><g stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M10 2.5v2M3.64 5.14l1.42 1.42M1 11.5h2M5.06 16.44l-1.42 1.42"/></g><circle cx="10" cy="11.5" r="4.2" fill="currentColor"/><path d="M10.2 22h11.15a4.15 4.15 0 0 0 .5-8.27 6.35 6.35 0 0 0-12.17 1.73A3.3 3.3 0 0 0 10.2 22Z" fill="currentColor" stroke="currentColor" stroke-width="1.6"/></svg>
+        <span>{{ config.get('AREA_NAME', '対象地域') }} 災害情報</span>
       </h2>
-      <span class="refresh-label">
-        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <path d="M20 7v5h-5M4 17v-5h5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M5.6 9a7 7 0 0 1 11.7-2L20 9M4 15l2.7 2a7 7 0 0 0 11.7-2" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-        10分おき自動更新
-      </span>
+      <button class="refresh-button" type="button" id="refreshDisaster">情報を更新</button>
     </div>
+    <p class="section-intro">青森市の公式災害情報と気象庁の警報・注意報を別々に表示しています。</p>
+    <label for="disasterFilter">表示する種類</label>
+    <select class="filter-control" id="disasterFilter">
+      <option value="すべて">すべて</option>
+      <option value="緊急">緊急</option>
+      <option value="警報">警報</option>
+      <option value="注意報">注意報</option>
+      <option value="通常">通常</option>
+    </select>
+    <div id="municipalInformation" class="info-state" aria-live="polite">青森市公式情報を確認しています。</div>
+    <p class="source-note"><strong>自治体公式情報:</strong> 青森市「現在発表されている災害情報」 · <span class="inline-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M12 7v5l3 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>確認時刻: <span id="municipalCheckedAt">確認中</span><br><a href="https://www.city.aomori.aomori.jp/anzen_kinkyu/saigai/1002513.html" target="_blank" rel="noopener noreferrer">青森市公式情報を開く</a></p>
+    <div class="disaster-list" id="weatherInformation" aria-live="polite">
+      <p class="info-state" role="status">気象庁の警報・注意報を取得しています。</p>
+    </div>
+    <p class="source-note"><strong><span class="inline-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z" fill="currentColor"/><path d="M7.8 7.8a6 6 0 0 0 0 8.4M16.2 7.8a6 6 0 0 1 0 8.4M4.5 4.5a10.6 10.6 0 0 0 0 15M19.5 4.5a10.6 10.6 0 0 1 0 15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>気象庁発表:</strong> 青森市（市区町村コード 0220100） · <span class="inline-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M12 7v5l3 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>発表時刻: <span id="weatherReportTime">確認中</span> · 取得時刻: <span id="weatherFetchedAt">確認中</span><br><a href="https://www.jma.go.jp/bosai/warning/data/r8/020000.json" target="_blank" rel="noopener noreferrer">気象庁 青森県警報データ</a></p>
+  </section>
 
-    <div class="weather-panel" id="weatherContent" aria-live="polite">
-      <p class="weather-location">
-        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <path d="M19 10c0 4.5-7 11-7 11S5 14.5 5 10a7 7 0 1 1 14 0Z" fill="currentColor"/>
-          <circle cx="12" cy="10" r="2.3" fill="#fff"/>
-        </svg>
-        <span id="weatherArea">青森市</span>
-      </p>
-      <p class="weather-status" id="weatherStatus" role="status">気象情報を読み込んでいます...</p>
-      <ul class="warning-list" id="warningList" hidden></ul>
-      <div class="weather-meta">
-        <p>
-          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M12 7v5l3 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-          データ取得: <span id="lastFetchTime">更新中...</span>
-        </p>
-        <p>
-          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M3 3v5h5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          気象庁発表: <span id="reportTime">確認中...</span>
-        </p>
-      </div>
-    </div>
+  <section class="home-card" aria-labelledby="resident-heading">
+    <h2 class="card-heading" id="resident-heading">
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 4h16v12H9l-5 4V4Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M8 9h8M8 12h5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      運営者からのお知らせ／住民向け発信
+    </h2>
+    <p class="section-intro">以下は運営者による発信であり、自治体の公式発令ではありません。</p>
+    {% set active_notices = resident_notices | selectattr('status', 'equalto', '発令中') | list %}
+    {% if active_notices %}
+      <ul class="resident-notices">
+        {% for notice in active_notices %}
+          <li class="notice-item {% if notice.get('urgency') == 'high' %}notice-item--high{% endif %}">
+            <h3>{% if notice.get('urgency') == 'high' %}<span class="urgency-label urgency-label--high">緊急度: 高</span>{% else %}<span class="urgency-label">通常</span>{% endif %} 運営者からの発信</h3>
+            <p>{{ notice.get('content', '') }}</p>
+            {% if notice.get('shelter') %}<p>避難先: {{ notice.get('shelter') }}</p>{% endif %}
+            <div class="notice-meta"><span class="instruction-state instruction-state--active">発信中</span><span>発信者: {{ notice.get('author', '運営者') }}</span><span>更新: {{ notice.get('updated_at', '不明') }}</span></div>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="info-state">現在、運営者から発令中の住民向け発信はありません。</p>
+    {% endif %}
+    <p><a href="{{ url_for('board') }}">発信ボードを見る</a></p>
   </section>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const map = L.map('shelterMap').setView([40.8222, 140.7474], 12);
-
+document.addEventListener('DOMContentLoaded', () => {
+  const mapMessage = document.getElementById('mapMessage');
+  if (!window.L) {
+    mapMessage.textContent = '地図ライブラリを読み込めませんでした。避難所情報は一覧から確認できます。';
+  } else {
+    const center = {{ city_center | tojson }};
+    const map = L.map('shelterMap').setView(center, 12);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors',
-        referrerPolicy: 'strict-origin-when-cross-origin'
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>',
+      referrerPolicy: 'strict-origin-when-cross-origin'
     }).addTo(map);
 
-    const status = document.getElementById('weatherStatus');
-    const warningList = document.getElementById('warningList');
+    let shelterMessage = '避難所データを読み込んでいます。';
+    let locationMessage = '';
+    const updateMapMessage = () => {
+      mapMessage.textContent = [shelterMessage, locationMessage].filter(Boolean).join(' ');
+    };
+    const makePin = (className) => L.divIcon({
+      className: '',
+      html: `<span class="map-pin ${className}" aria-hidden="true"></span>`,
+      iconSize: [22, 22],
+      iconAnchor: [11, 20]
+    });
 
-    function setWeatherStatus(message, statusClass) {
-        status.replaceChildren(document.createTextNode(message));
-        status.className = `weather-status ${statusClass || ''}`.trim();
-    }
+    fetch('/api/shelters')
+      .then((response) => {
+        if (!response.ok) throw new Error(`避難所APIエラー: ${response.status}`);
+        return response.json();
+      })
+      .then((data) => {
+        if (!data || !Array.isArray(data.shelters)) throw new Error('避難所データ形式が正しくありません');
+        const shelters = data.shelters.filter((s) =>
+          Number.isFinite(s.latitude) && Number.isFinite(s.longitude) &&
+          Math.abs(s.latitude) <= 90 && Math.abs(s.longitude) <= 180 &&
+          typeof s.name === 'string' && s.name.trim()
+        );
+        shelters.forEach((shelter) => {
+          const open = shelter.status === '開設中';
+          const marker = L.marker([shelter.latitude, shelter.longitude], {
+            icon: makePin(open ? '' : 'map-pin--closed'),
+            title: `${shelter.name}（${shelter.status || '未設定'}）`,
+            alt: `${shelter.name}、${shelter.status || '未設定'}`
+          }).addTo(map);
+          const popup = document.createElement('span');
+          popup.textContent = `${shelter.name}（${shelter.status || '未設定'}）`;
+          marker.bindPopup(popup);
+        });
+        shelterMessage = shelters.length
+          ? `${shelters.length}件の避難所を表示しています。`
+          : '確認済みの地図座標が登録された避難所はありません。施設・所在地の確認と座標登録後に表示されます。';
+        updateMapMessage();
+      })
+      .catch((error) => {
+        console.error('避難所地図データの取得に失敗しました:', error);
+        shelterMessage = '避難所データを取得できません。地図は対象地域の中心を表示しています。';
+        updateMapMessage();
+      });
 
-    function updateWeatherContent(data) {
-        const areaName = typeof data.area_name === 'string' ? data.area_name : '青森市';
-        document.getElementById('weatherTitle').textContent = `${areaName} 気象警報・注意報`;
-        document.getElementById('weatherArea').textContent = areaName;
-        document.getElementById('lastFetchTime').textContent = data.last_fetch_time || '不明';
-        document.getElementById('reportTime').textContent = data.report_time || '不明';
-        warningList.replaceChildren();
-
-        if (data.error) {
-            warningList.hidden = true;
-            setWeatherStatus('気象情報を取得できませんでした', 'is-error');
-            return;
+    if ('geolocation' in navigator) {
+      navigator.geolocation.getCurrentPosition((position) => {
+        const latitude = position.coords.latitude;
+        const longitude = position.coords.longitude;
+        if (!Number.isFinite(latitude) || !Number.isFinite(longitude) ||
+            Math.abs(latitude) > 90 || Math.abs(longitude) > 180) {
+          locationMessage = '現在地を確認できませんでした。';
+        } else {
+          const here = [latitude, longitude];
+          L.marker(here, {
+            icon: makePin('map-pin--you'),
+            title: '現在地',
+            alt: '現在地'
+          }).addTo(map).bindPopup('現在地');
+          map.setView(here, 13);
+          locationMessage = '現在地を青いピンで表示しています。';
         }
-
-        const warnings = Array.isArray(data.warnings) ? data.warnings : [];
-        if (warnings.length) {
-            warnings.forEach((warning) => {
-                const item = document.createElement('li');
-                const name = typeof warning.name === 'string' ? warning.name : '警報・注意報';
-                const warningStatus = typeof warning.status === 'string' ? warning.status : '';
-                item.textContent = warningStatus ? `${name}（${warningStatus}）` : name;
-                warningList.append(item);
-            });
-            warningList.hidden = false;
-            setWeatherStatus('警報・注意報が発表されています', 'has-warnings');
-            return;
-        }
-
-        warningList.hidden = true;
-        setWeatherStatus('現在、警報・注意報は発表されていません', '');
+        updateMapMessage();
+      }, () => {
+        locationMessage = '現在地は取得できませんでした。対象地域の中心を表示しています。';
+        updateMapMessage();
+      }, { timeout: 8000, maximumAge: 60000 });
+    } else {
+      locationMessage = 'このブラウザーでは位置情報を利用できません。対象地域の中心を表示しています。';
+      updateMapMessage();
     }
+  }
 
-    async function updateWeatherWarnings() {
-        try {
-            const response = await fetch('/api/weather_warnings');
-            if (!response.ok) {
-                throw new Error(`気象情報APIの応答エラー: ${response.status}`);
-            }
-            updateWeatherContent(await response.json());
-        } catch (error) {
-            console.error('気象情報の更新に失敗しました:', error);
-            setWeatherStatus('気象情報を取得できませんでした', 'is-error');
-        }
+  const filter = document.getElementById('disasterFilter');
+  const weatherInformation = document.getElementById('weatherInformation');
+  let currentWarnings = null;
+  let currentWeatherError = false;
+  let currentMunicipalData = { status: 'error' };
+
+  function renderWeather() {
+    weatherInformation.replaceChildren();
+    if (currentWeatherError) {
+      const error = document.createElement('p');
+      error.className = 'info-state';
+      error.textContent = '気象庁の情報を取得できません。発令がないことを確認できた状態ではありません。';
+      weatherInformation.append(error);
+      return;
     }
+    if (!Array.isArray(currentWarnings)) return;
+    const selected = filter.value;
+    const warnings = currentWarnings.filter((item) =>
+      selected === 'すべて' || item.category === selected
+    );
+    if (!warnings.length) {
+      const empty = document.createElement('p');
+      empty.className = 'info-state';
+      const check = document.createElement('span');
+      check.className = 'state-check';
+      check.setAttribute('aria-hidden', 'true');
+      check.textContent = '✓';
+      empty.append(check, document.createTextNode(selected === 'すべて'
+        ? '気象庁から取得した情報では、現在、警報・注意報はありません。'
+        : `${selected}に該当する気象情報はありません。`
+      ));
+      weatherInformation.append(empty);
+      return;
+    }
+    warnings.forEach((warning) => {
+      const article = document.createElement('article');
+      article.className = `disaster-item disaster-item--${warning.category}`;
+      const title = document.createElement('strong');
+      title.textContent = warning.name || '気象情報';
+      const label = document.createElement('span');
+      label.className = `type-label type-label--${warning.category}`;
+      label.textContent = warning.category;
+      article.append(label, document.createTextNode(' '), title);
+      const meta = document.createElement('div');
+      meta.className = 'disaster-meta';
+      meta.textContent = `対象地域: ${warning.area_name || '青森市'} · 状況: ${warning.status || '不明'}`;
+      article.append(meta);
+      weatherInformation.append(article);
+    });
+  }
 
-    updateWeatherWarnings();
-    window.setInterval(updateWeatherWarnings, 600000);
+  function renderMunicipal(data) {
+    const panel = document.getElementById('municipalInformation');
+    panel.replaceChildren();
+    document.getElementById('municipalCheckedAt').textContent = data.checked_at || '不明';
+    const status = data.status;
+    const message = document.createElement('p');
+    message.className = 'info-state';
+    if (status === 'none') {
+      const check = document.createElement('span');
+      check.className = 'state-check';
+      check.setAttribute('aria-hidden', 'true');
+      check.textContent = '✓';
+      message.append(check, document.createTextNode(
+        '青森市公式情報に基づき、現在発表されている情報はありません。'
+      ));
+    } else if (status === 'active' && typeof data.content === 'string' && data.content) {
+      const category = ['緊急', '警報', '注意報', '通常'].includes(data.category)
+        ? data.category
+        : '通常';
+      if (filter.value !== 'すべて' && filter.value !== category) {
+        message.textContent = `青森市公式情報に、選択中の「${filter.value}」に該当する発表はありません。`;
+        panel.append(message);
+        return;
+      }
+      const label = document.createElement('span');
+      label.className = `type-label type-label--${category}`;
+      label.textContent = category;
+      message.className = `disaster-item disaster-item--${category}`;
+      message.append(label, document.createTextNode(' '));
+      const content = document.createElement('span');
+      content.textContent = data.content;
+      message.append(content);
+    } else {
+      message.textContent = '青森市公式情報を確認できません。ページ形式の変更または取得失敗の可能性があります。';
+      message.setAttribute('role', 'alert');
+    }
+    panel.append(message);
+  }
+
+  async function refreshInformation() {
+    const button = document.getElementById('refreshDisaster');
+    button.disabled = true;
+    button.textContent = '更新中...';
+    try {
+      const response = await fetch('/api/public_disaster_information', { cache: 'no-store' });
+      if (!response.ok) throw new Error(`災害情報APIエラー: ${response.status}`);
+      const data = await response.json();
+      currentMunicipalData = data.municipal || { status: 'error' };
+      renderMunicipal(currentMunicipalData);
+      currentWeatherError = Boolean(!data.weather || data.weather.error);
+      currentWarnings = currentWeatherError ? null : data.weather.warnings;
+      document.getElementById('weatherReportTime').textContent =
+        data.weather && data.weather.report_time || '不明';
+      document.getElementById('weatherFetchedAt').textContent =
+        data.weather && data.weather.last_fetch_time || '不明';
+      renderWeather();
+    } catch (error) {
+      console.error('公的災害情報の更新に失敗しました:', error);
+      currentMunicipalData = { status: 'error' };
+      renderMunicipal(currentMunicipalData);
+      currentWeatherError = true;
+      currentWarnings = null;
+      document.getElementById('weatherReportTime').textContent = '確認できません';
+      document.getElementById('weatherFetchedAt').textContent = '取得失敗';
+      renderWeather();
+    } finally {
+      button.disabled = false;
+      button.textContent = '情報を更新';
+    }
+  }
+
+  filter.addEventListener('change', renderWeather);
+  filter.addEventListener('change', () => renderMunicipal(currentMunicipalData));
+  document.getElementById('refreshDisaster').addEventListener('click', refreshInformation);
+  refreshInformation();
+  window.setInterval(refreshInformation, 600000);
 });
 </script>
 {% endblock %}

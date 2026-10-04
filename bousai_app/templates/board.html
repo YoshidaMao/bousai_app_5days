@@ -1,25 +1,102 @@
 {% extends "base.html" %}
 
-{% block title %}指示・発信ボード - 防災アプリ{% endblock %}
+{% block title %}発信ボード - 防災アプリ{% endblock %}
 
 {% block content %}
-<h2>発信ボード</h2>
-<p>住民向けの発信を登録・確認できます。</p>
+<style>
+  .board-content { display: grid; gap: 24px; }
+  .board-card { padding: 22px; border: 1px solid #dbe3ee; border-radius: 14px; background: #fff; }
+  .board-form, .instruction-edit { display: grid; gap: 13px; }
+  .board-form label, .instruction-edit label { display: grid; gap: 5px; font-weight: 650; }
+  .board-form input, .board-form select, .board-form textarea,
+  .instruction-edit input, .instruction-edit select, .instruction-edit textarea {
+    width: 100%; min-height: 42px; padding: 9px 11px; border: 1px solid #bdcad9;
+    border-radius: 8px; color: #334155; background: #fff; font: inherit;
+  }
+  .board-form textarea, .instruction-edit textarea { min-height: 88px; resize: vertical; }
+  .board-form button, .instruction-edit button {
+    min-height: 42px; padding: 8px 15px; border: 0; border-radius: 8px;
+    color: #fff; background: #2857a4; font: inherit; font-weight: 700; cursor: pointer;
+  }
+  .instruction-list { display: grid; gap: 16px; padding: 0; list-style: none; }
+  .instruction-card { padding: 17px; border: 1px solid #dbe3ee; border-radius: 12px; background: #f8fafc; }
+  .instruction-card--high { border-color: #fecaca; background: #fff1f2; }
+  .instruction-card--inactive { opacity: .82; }
+  .instruction-card h3 { margin: 0 0 10px; }
+  .instruction-status { display: inline-block; margin-right: 7px; padding: 3px 8px; border-radius: 999px; font-size: 13px; font-weight: 700; }
+  .instruction-status--active { color: #166534; background: #dcfce7; }
+  .instruction-status--inactive { color: #475569; background: #e2e8f0; }
+  .urgency-high { color: #991b1b; font-weight: 750; }
+  .instruction-meta { display: flex; flex-wrap: wrap; gap: 8px 16px; color: #475569; font-size: 14px; }
+  .inline-edit { margin-top: 15px; padding-top: 15px; border-top: 1px solid #dbe3ee; }
+  .form-message { padding: 12px 14px; border-radius: 8px; background: #eff6ff; }
+</style>
 
-<!-- 発信一覧 -->
-<h3>発信一覧</h3>
-{% if instructions %}
-<table border="1" cellpadding="5">
-  <tr>
-    <th>内容</th>
-  </tr>
-  {% for inst in instructions %}
-  <tr>
-    <td>{{ inst.content }}{% if inst.shelter %}（避難先: {{ inst.shelter }}）{% endif %}</td>
-  </tr>
-  {% endfor %}
-</table>
-{% else %}
-<p>登録されている指示はありません。</p>
-{% endif %}
+<div class="board-content">
+  <section class="board-card" aria-labelledby="board-heading">
+    <h1 id="board-heading">運営者向け発信ボード</h1>
+    <p>ここで登録する情報は運営者による発信です。自治体の公式避難情報とは異なります。</p>
+    {% if request.args.get('saved') %}
+      <p class="form-message" role="status">発信を保存しました。</p>
+    {% elif request.args.get('error') == 'save' %}
+      <p class="form-message" role="alert">保存に失敗しました。入力内容と保存先を確認してください。</p>
+    {% elif request.args.get('error') %}
+      <p class="form-message" role="alert">入力内容または対象の発信を確認してください。</p>
+    {% endif %}
+    <form method="post" action="{{ url_for('create_instruction') }}" class="board-form">
+      <label for="target">対象
+        <select id="target" name="target" required>
+          <option value="住民">住民</option>
+          <option value="運営者">運営者</option>
+        </select>
+      </label>
+      <label for="content">内容
+        <textarea id="content" name="content" required maxlength="2000"></textarea>
+      </label>
+      <label for="shelter">避難先（任意。確認できた情報のみ入力）<input id="shelter" name="shelter" maxlength="200"></label>
+      <label for="urgency">緊急度
+        <select id="urgency" name="urgency"><option value="normal">通常</option><option value="high">高</option></select>
+      </label>
+      <label for="status">状態
+        <select id="status" name="status"><option value="発令中">発令中</option><option value="解除">解除</option><option value="完了">完了</option></select>
+      </label>
+      <button type="submit">発信を登録</button>
+    </form>
+  </section>
+
+  <section class="board-card" aria-labelledby="instruction-list-heading">
+    <h2 id="instruction-list-heading">保存済み発信</h2>
+    {% if instructions %}
+      <ul class="instruction-list">
+        {% for inst in instructions %}
+          {% set active = inst.get('status', '発令中') == '発令中' %}
+          <li class="instruction-card {% if inst.get('urgency') == 'high' %}instruction-card--high{% endif %} {% if not active %}instruction-card--inactive{% endif %}">
+            <h3><span class="instruction-status {% if active %}instruction-status--active{% else %}instruction-status--inactive{% endif %}">{{ inst.get('status', '状態未設定') }}</span>{{ inst.get('target', '対象未設定') }}向け発信</h3>
+            <p>{{ inst.get('content', '') }}</p>
+            {% if inst.get('shelter') %}<p>避難先: {{ inst.get('shelter') }}</p>{% endif %}
+            <div class="instruction-meta">
+              <span class="{% if inst.get('urgency') == 'high' %}urgency-high{% endif %}">緊急度: {{ '高' if inst.get('urgency') == 'high' else '通常' }}</span>
+              <span>発信者: {{ inst.get('author', '運営者') }}</span>
+              <span>作成: {{ inst.get('created_at', '不明') }}</span>
+              <span>更新: {{ inst.get('updated_at', '不明') }}</span>
+            </div>
+            <details class="inline-edit">
+              <summary>変更・解除</summary>
+              <form method="post" action="{{ url_for('update_instruction', instruction_id=inst.get('id')) }}" class="instruction-edit">
+                <label>対象<select name="target"><option value="住民" {% if inst.get('target') == '住民' %}selected{% endif %}>住民</option><option value="運営者" {% if inst.get('target') == '運営者' %}selected{% endif %}>運営者</option></select></label>
+                <label>内容<textarea name="content" required maxlength="2000">{{ inst.get('content', '') }}</textarea></label>
+                <label>避難先（任意）<input name="shelter" value="{{ inst.get('shelter', '') }}" maxlength="200"></label>
+                <label>緊急度<select name="urgency"><option value="normal" {% if inst.get('urgency') != 'high' %}selected{% endif %}>通常</option><option value="high" {% if inst.get('urgency') == 'high' %}selected{% endif %}>高</option></select></label>
+                <label>状態<select name="status"><option value="発令中" {% if inst.get('status') == '発令中' %}selected{% endif %}>発令中</option><option value="解除" {% if inst.get('status') == '解除' %}selected{% endif %}>解除</option><option value="完了" {% if inst.get('status') == '完了' %}selected{% endif %}>完了</option></select></label>
+                <button type="submit">内容を更新</button>
+              </form>
+            </details>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p>登録されている発信はありません。</p>
+    {% endif %}
+  </section>
+</div>
 {% endblock %}
