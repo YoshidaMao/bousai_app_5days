@@ -1,23 +1,85 @@
 {% extends "base.html" %}
 
 {% block content %}
+<style>
+  .shelter-form { display: grid; gap: 18px; max-width: 560px; }
+  .shelter-form label { display: block; margin-bottom: 6px; font-weight: 650; }
+  .shelter-form input,
+  .shelter-form select {
+    width: 100%;
+    min-height: 44px;
+    padding: 9px 11px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    color: #334155;
+    background: #fff;
+    font: inherit;
+  }
+  .shelter-form button {
+    min-height: 44px;
+    padding: 9px 18px;
+    border: 0;
+    border-radius: 8px;
+    color: #fff;
+    background: #2857a4;
+    font: inherit;
+    font-weight: 650;
+    cursor: pointer;
+  }
+  .form-message { padding: 12px 14px; border-radius: 8px; background: #eff6ff; }
+</style>
+
 <h2>避難所登録</h2>
 <p>新しい避難所情報を登録します。</p>
 
-<!-- 成功・エラーメッセージ表示 -->
 {% if success %}
-  <p>{{ message }}</p>
+  <p class="form-message" role="status">{{ message }}</p>
 {% endif %}
-
 {% if error %}
-  <p>{{ message }}</p>
+  <p class="form-message" role="alert">{{ message }}</p>
 {% endif %}
 
-<form method="POST">
-  <p>
-    <label for="name">避難所名（必須）</label><br>
-    <input type="text" id="name" name="name">
-  </p>
-  <p><button type="submit">登録</button></p>
+<form method="POST" class="shelter-form">
+  <div>
+    <label for="name">避難所名（必須）</label>
+    <input type="text" id="name" name="name" required>
+  </div>
+  <div>
+    <label for="address">住所</label>
+    <input type="text" id="address" name="address" autocomplete="street-address">
+  </div>
+  <div>
+    <label for="status">開設状況</label>
+    <select id="status" name="status">
+      <option value="未設定">未設定</option>
+      <option value="開設中">開設中</option>
+      <option value="閉鎖">閉鎖</option>
+    </select>
+  </div>
+  <div>
+    <label for="capacity">収容人数（人）</label>
+    <input type="number" id="capacity" name="capacity" min="1" step="1" inputmode="numeric">
+  </div>
+  <div>
+    <label for="evacuees">現在の避難者数（人）</label>
+    <input type="number" id="evacuees" name="evacuees" min="0" step="1" inputmode="numeric">
+  </div>
+  <div>
+    <label for="pets_allowed">ペット受け入れ</label>
+    <select id="pets_allowed" name="pets_allowed">
+      <option value="unknown">未確認</option>
+      <option value="yes">可</option>
+      <option value="no">不可</option>
+    </select>
+  </div>
+  <div>
+    <label for="barrier_free">バリアフリー対応</label>
+    <select id="barrier_free" name="barrier_free">
+      <option value="unknown">未確認</option>
+      <option value="yes">対応</option>
+      <option value="no">非対応</option>
+    </select>
+  </div>
+  <button type="submit">登録</button>
 </form>
 {% endblock %}

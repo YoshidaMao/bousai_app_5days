@@ -1,16 +1,115 @@
 {% extends "base.html" %}
 
 {% block content %}
+<style>
+  .results-table-wrap { overflow-x: auto; margin: 20px 0; }
+  .results-table { width: 100%; border-collapse: collapse; background: #fff; }
+  .results-table th,
+  .results-table td { padding: 13px 15px; border: 1px solid #dbe3ee; text-align: left; }
+  .results-table th { color: #334155; background: #eef3fa; }
+  .shelter-status { display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: 14px; font-weight: 650; }
+  .shelter-status--open { color: #166534; background: #dcfce7; }
+  .shelter-status--closed { color: #991b1b; background: #fee2e2; }
+  .shelter-status--unset { color: #475569; background: #e2e8f0; }
+  .occupancy-status { display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: 14px; font-weight: 650; white-space: nowrap; }
+  .occupancy-status--available { color: #166534; background: #dcfce7; }
+  .occupancy-status--full { color: #991b1b; background: #fee2e2; }
+  .occupancy-status--unknown { color: #475569; background: #e2e8f0; }
+  .facility-labels { display: flex; flex-wrap: wrap; gap: 6px; min-width: 150px; }
+  .facility-label { display: inline-flex; align-items: center; gap: 5px; padding: 4px 9px; border-radius: 999px; font-size: 13px; font-weight: 650; white-space: nowrap; }
+  .facility-label--yes { color: #166534; background: #dcfce7; }
+  .facility-label--no { color: #991b1b; background: #fee2e2; }
+  .facility-label--unknown { color: #475569; background: #e2e8f0; }
+  .empty-results {
+    margin: 20px 0;
+    padding: 24px;
+    border: 1px solid #dbe3ee;
+    border-radius: 12px;
+    background: #fff;
+  }
+  .empty-results h3 { margin: 0 0 8px; color: #1e293b; }
+  .empty-results p { margin: 0 0 16px; color: #64748b; }
+  @media (max-width: 520px) {
+    .results-table th, .results-table td { padding: 10px 9px; }
+  }
+</style>
+
 <h2>検索結果</h2>
 
 {% if results %}
-  <ul>
-    {% for shelter in results %}
-    <li>{{ shelter.name }}</li>
-    {% endfor %}
-  </ul>
+  <div class="results-table-wrap">
+    <table class="results-table">
+      <thead>
+        <tr>
+          <th scope="col">避難所名</th>
+          <th scope="col">住所</th>
+          <th scope="col">開設状況</th>
+          <th scope="col">収容人数</th>
+          <th scope="col">現在の避難者数</th>
+          <th scope="col">空き状況</th>
+          <th scope="col">設備・対応</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for shelter in results %}
+          {% set status = shelter.get('status', '未設定') %}
+          {% set capacity = shelter.get('capacity') %}
+          {% set evacuees = shelter.get('evacuees') %}
+          {% set occupancy_known = capacity is not none and evacuees is not none %}
+          {% set vacancies = capacity - evacuees if occupancy_known else none %}
+          {% set pets_allowed = shelter.get('pets_allowed', 'unknown') %}
+          {% set barrier_free = shelter.get('barrier_free', 'unknown') %}
+          <tr>
+            <td>{{ shelter.get('name', '名称未登録') }}</td>
+            <td>{{ shelter.get('address') or '未登録' }}</td>
+            <td>
+              <span class="shelter-status {% if status == '開設中' %}shelter-status--open{% elif status == '閉鎖' %}shelter-status--closed{% else %}shelter-status--unset{% endif %}">
+                {{ status }}
+              </span>
+            </td>
+            <td>{{ capacity ~ '人' if capacity is not none else '未登録' }}</td>
+            <td>{{ evacuees ~ '人' if evacuees is not none else '未登録' }}</td>
+            <td>
+              {% if not occupancy_known %}
+                <span class="occupancy-status occupancy-status--unknown">不明</span>
+              {% elif vacancies > 0 %}
+                <span class="occupancy-status occupancy-status--available">空きあり（あと{{ vacancies }}人）</span>
+              {% elif vacancies == 0 %}
+                <span class="occupancy-status occupancy-status--full">満員</span>
+              {% else %}
+                <span class="occupancy-status occupancy-status--full">定員超過（{{ -vacancies }}人）</span>
+              {% endif %}
+            </td>
+            <td>
+              <div class="facility-labels">
+                <span class="facility-label facility-label--{{ pets_allowed }}">
+                  <span aria-hidden="true">🐾</span>
+                  {% if pets_allowed == 'yes' %}ペット可{% elif pets_allowed == 'no' %}ペット不可{% else %}ペット未確認{% endif %}
+                </span>
+                <span class="facility-label facility-label--{{ barrier_free }}">
+                  <span aria-hidden="true">♿</span>
+                  {% if barrier_free == 'yes' %}バリアフリー対応{% elif barrier_free == 'no' %}バリアフリー非対応{% else %}バリアフリー未確認{% endif %}
+                </span>
+              </div>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 {% else %}
-  <p>該当する避難所が見つかりませんでした</p>
+  <section class="empty-results" aria-labelledby="empty-results-heading">
+    <h3 id="empty-results-heading">条件に合う避難所が見つかりませんでした</h3>
+    {% if searched_district %}
+      <p>地区「{{ searched_district }}」に該当する避難所はありません。地区名を変更するか、空欄にして再検索してください。</p>
+    {% else %}
+      <p>現在表示できる避難所がありません。検索条件を変更して、もう一度お試しください。</p>
+    {% endif %}
+    <a
+      class="search-button"
+      href="{{ url_for('shelter_search', district=searched_district) }}"
+    >条件を変えて再検索</a>
+  </section>
 {% endif %}
 
 <p>

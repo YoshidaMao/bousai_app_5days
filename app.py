@@ -78,6 +78,9 @@ WARNING_CODES = {
     "49": "レベル4土砂災害危険警報"
 }
 
+SHELTER_STATUSES = ("未設定", "開設中", "閉鎖")
+FACILITY_SUPPORT_VALUES = ("unknown", "yes", "no")
+
 # ────────────────────────────────
 # サンプルデータの読み込み
 DATA_FILE = os.path.join(APP_DIR, 'data', 'shelters.json')
@@ -305,6 +308,12 @@ def logout():
 def shelter_register():
     if request.method == 'POST':
         shelter_name = request.form.get('name', '').strip()
+        shelter_address = request.form.get('address', '').strip()
+        shelter_status = request.form.get('status', '未設定').strip()
+        capacity_input = request.form.get('capacity', '').strip()
+        evacuees_input = request.form.get('evacuees', '').strip()
+        pets_allowed = request.form.get('pets_allowed', 'unknown').strip()
+        barrier_free = request.form.get('barrier_free', 'unknown').strip()
 
         if not shelter_name:
             return render_template(
@@ -313,8 +322,58 @@ def shelter_register():
                 message='避難所名を入力してください。'
             )
 
+        if shelter_status not in SHELTER_STATUSES:
+            return render_template(
+                'shelter_register.html',
+                error=True,
+                message='開設状況を選択してください。'
+            ), 400
+
+        if (
+            pets_allowed not in FACILITY_SUPPORT_VALUES
+            or barrier_free not in FACILITY_SUPPORT_VALUES
+        ):
+            return render_template(
+                'shelter_register.html',
+                error=True,
+                message='設備・対応状況の値が正しくありません。'
+            ), 400
+
+        try:
+            capacity = int(capacity_input) if capacity_input else None
+            evacuees = int(evacuees_input) if evacuees_input else None
+        except ValueError:
+            return render_template(
+                'shelter_register.html',
+                error=True,
+                message='収容人数と現在の避難者数は整数で入力してください。'
+            ), 400
+
+        if capacity is not None and capacity < 1:
+            return render_template(
+                'shelter_register.html',
+                error=True,
+                message='収容人数は1人以上で入力してください。'
+            ), 400
+
+        if evacuees is not None and evacuees < 0:
+            return render_template(
+                'shelter_register.html',
+                error=True,
+                message='現在の避難者数は0人以上で入力してください。'
+            ), 400
+
         new_id = max((s.get('id', 0) for s in shelters), default=0) + 1
-        shelters.append({'id': new_id, 'name': shelter_name})
+        shelters.append({
+            'id': new_id,
+            'name': shelter_name,
+            'address': shelter_address,
+            'status': shelter_status,
+            'capacity': capacity,
+            'evacuees': evacuees,
+            'pets_allowed': pets_allowed,
+            'barrier_free': barrier_free
+        })
         save_shelters()
 
         return render_template(
@@ -328,7 +387,10 @@ def shelter_register():
 # 避難所検索ページ
 @app.route('/shelter_search')
 def shelter_search():
-    return render_template('shelter_search.html')
+    return render_template(
+        'shelter_search.html',
+        district=request.args.get('district', '').strip()
+    )
 
 # 全施設一覧ページ
 @app.route('/all_shelters')
@@ -346,8 +408,13 @@ def board():
 # 検索結果ページ：templates/search_results.html を返す
 @app.route('/search_results')
 def search_results():
-    results = filter_shelters(request.args.get('district'))
-    return render_template('search_results.html', results=results)
+    district = request.args.get('district', '').strip()
+    results = filter_shelters(district)
+    return render_template(
+        'search_results.html',
+        results=results,
+        searched_district=district
+    )
 
 # JSON API：/shelters?district=地区名
 @app.route('/shelters', methods=['GET'])
